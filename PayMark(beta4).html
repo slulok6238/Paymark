@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>日常支出收入記事簿</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        crossorigin="anonymous">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    .badge-income { 
+      background-color: #198754; 
+      font-size: 0.8em;
+      padding: 0.5em 0.8em;
+    }
+    .badge-expense { 
+      background-color: #dc3545; 
+      font-size: 0.8em;
+      padding: 0.5em 0.8em;
+    }
+    .sticky-summary { 
+      position: sticky; 
+      top: 0; 
+      z-index: 1; 
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-bottom: 3px solid #007bff;
+    }
+    .table td, .table th { vertical-align: middle; }
+    .card {
+      border: none;
+      border-radius: 15px;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      border: none;
+      border-radius: 25px;
+      padding: 0.5rem 2rem;
+    }
+    .btn-primary:hover {
+      transform: scale(1.05);
+    }
+    .btn-outline-primary {
+      border-color: #007bff;
+      color: #007bff;
+      border-radius: 20px;
+    }
+    .btn-outline-primary:hover {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      color: white;
+    }
+    .summary-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    .form-select, .form-control {
+      border-radius: 10px;
+    }
+    body {
+      background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <nav class="navbar navbar-dark mb-4">
+    <div class="container">
+      <span class="navbar-brand mb-0 h1">
+        <i class="bi bi-journal-text me-2"></i>日常支出收入記事簿
+      </span>
+    </div>
+  </nav>
+  <div class="container">
+    <!-- 摘要卡片 -->
+    <div class="sticky-summary py-4">
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <div class="card shadow-lg border-success">
+            <div class="card-body text-center">
+              <i class="bi bi-arrow-up-circle-fill summary-icon text-success"></i>
+              <h6 class="card-title text-success mb-2">總收入</h6>
+              <p class="display-6 mb-0" id="totalIncome">$0</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="card shadow-lg border-danger">
+            <div class="card-body text-center">
+              <i class="bi bi-arrow-down-circle-fill summary-icon text-danger"></i>
+              <h6 class="card-title text-danger mb-2">總支出</h6>
+              <p class="display-6 mb-0" id="totalExpense">$0</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="card shadow-lg border-primary">
+            <div class="card-body text-center">
+              <i class="bi bi-wallet2 summary-icon text-primary"></i>
+              <h6 class="card-title text-primary mb-2">結餘</h6>
+              <p class="display-6 mb-0" id="netBalance">$0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 新增紀錄表單 -->
+    <div class="card shadow-lg mb-4">
+      <div class="card-header bg-primary text-white">
+        <i class="bi bi-plus-circle me-2"></i>新增紀錄
+      </div>
+      <div class="card-body">
+        <form id="entryForm" class="row g-3">
+          <div class="col-12 col-md-3">
+            <label class="form-label" for="date">
+              <i class="bi bi-calendar-event text-info me-1"></i>日期
+            </label>
+            <input type="date" class="form-control" id="date" required>
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label" for="type">
+              <i class="bi bi-tag text-secondary me-1"></i>類型
+            </label>
+            <select class="form-select" id="type" required>
+              <option value="income">收入</option>
+              <option value="expense">支出</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label" for="category">
+              <i class="bi bi-category text-warning me-1"></i>類別
+            </label>
+            <select class="form-select" id="category" required>
+              <option value="薪資">薪資</option>
+              <option value="餐飲">餐飲</option>
+              <option value="交通">交通</option>
+              <option value="娛樂">娛樂</option>
+              <option value="購物">購物</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label" for="amount">
+              <i class="bi bi-currency-dollar text-success me-1"></i>金額
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-success text-white">$</span>
+              <input type="number" step="0.01" min="0" class="form-control" id="amount" required>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="note">
+              <i class="bi bi-chat-text text-muted me-1"></i>備註
+            </label>
+            <input type="text" class="form-control" id="note" placeholder="例如：午餐、加班費">
+          </div>
+          <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-plus-lg me-1"></i>新增
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <!-- 篩選列 -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <button class="btn btn-outline-secondary btn-sm active" data-filter="all">
+        <i class="bi bi-funnel me-1"></i>全部
+      </button>
+      <button class="btn btn-outline-success btn-sm" data-filter="income">
+        <i class="bi bi-arrow-up me-1"></i>只看收入
+      </button>
+      <button class="btn btn-outline-danger btn-sm" data-filter="expense">
+        <i class="bi bi-arrow-down me-1"></i>只看支出
+      </button>
+      <select id="filterCategory" class="form-select form-select-sm" style="max-width: 150px;">
+        <option value="all">全部類別</option>
+        <option value="薪資">薪資</option>
+        <option value="餐飲">餐飲</option>
+        <option value="交通">交通</option>
+        <option value="娛樂">娛樂</option>
+        <option value="購物">購物</option>
+        <option value="其他">其他</option>
+      </select>
+      <!-- 年份篩選 -->
+      <select id="filterYear" class="form-select form-select-sm" style="max-width: 120px;"></select>
+      <!-- 月份篩選 -->
+      <select id="filterMonth" class="form-select form-select-sm" style="max-width: 120px;"></select>
+      <!-- 匯出按鈕 -->
+      <button class="btn btn-outline-primary btn-sm" onclick="exportPDF()">
+        <i class="bi bi-download me-1"></i>匯出 PDF
+      </button>
+    </div>
+    <!-- 紀錄表格 -->
+    <div class="card shadow-lg">
+      <div class="card-header bg-info text-white">
+        <i class="bi bi-list-ul me-2"></i>紀錄列表
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th><i class="bi bi-calendar me-1"></i>日期</th>
+              <th><i class="bi bi-tag me-1"></i>類型</th>
+              <th><i class="bi bi-category me-1"></i>類別</th>
+              <th class="text-end"><i class="bi bi-currency-dollar me-1"></i>金額</th>
+              <th><i class="bi bi-chat me-1"></i>備註</th>
+              <th class="text-end"><i class="bi bi-trash me-1"></i>操作</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+          crossorigin="anonymous"></script>
+  <!-- jsPDF and AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.32/jspdf.plugin.autotable.min.js"></script>
+  <script>
+    const form = document.getElementById('entryForm');
+    const recordsBody = document.getElementById('recordsBody');
+    const totalIncomeEl = document.getElementById('totalIncome');
+    const totalExpenseEl = document.getElementById('totalExpense');
+    const netBalanceEl = document.getElementById('netBalance');
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const filterCategory = document.getElementById('filterCategory');
+    const filterYear = document.getElementById('filterYear');
+    const filterMonth = document.getElementById('filterMonth');
+    let records = JSON.parse(localStorage.getItem('records') || '[]');
+    let currentTypeFilter = 'all';
+    let currentCategoryFilter = 'all';
+    let currentYearFilter = '';
+    let currentMonthFilter = '';
+
+    // 預設日期為今天
+    document.getElementById('date').valueAsDate = new Date();
+
+    // 動態產生年份下拉選單，並預設為當前年份
+    function populateYearFilter() {
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const select = document.getElementById('filterYear');
+      select.innerHTML = ''; // 清空
+
+      // 新增「全部年份」選項
+      const allOption = document.createElement('option');
+      allOption.value = '';
+      allOption.textContent = '全部年份';
+      select.appendChild(allOption);
+
+      // 產生前 8 年到後 2 年的年份選項
+      for (let year = currentYear - 8; year <= currentYear + 2; year++) {
+        const option = document.createElement('option');
+        option.value = year.toString();
+        option.textContent = `${year} 年`;
+        if (year === currentYear) {
+          option.selected = true;
+          currentYearFilter = year.toString(); // 預設篩選當前年份
+        }
+        select.appendChild(option);
+      }
+    }
+
+    // 動態產生月份下拉選單，並預設為當前月份
+    function populateMonthFilter() {
+      const today = new Date();
+      const currentMonth = today.getMonth() + 1;
+      const select = document.getElementById('filterMonth');
+      select.innerHTML = ''; // 清空
+
+      // 新增「全部月份」選項
+      const allOption = document.createElement('option');
+      allOption.value = '';
+      allOption.textContent = '全部月份';
+      select.appendChild(allOption);
+
+      // 產生 1 月到 12 月的選項
+      for (let month = 1; month <= 12; month++) {
+        const option = document.createElement('option');
+        option.value = month.toString().padStart(2, '0');
+        option.textContent = `${month} 月`;
+        if (month === currentMonth) {
+          option.selected = true;
+          currentMonthFilter = option.value; // 預設篩選當前月份
+        }
+        select.appendChild(option);
+      }
+    }
+
+    // 呼叫產生下拉選單
+    populateYearFilter();
+    populateMonthFilter();
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const record = {
+        id: crypto.randomUUID(),
+        date: document.getElementById('date').value,
+        type: document.getElementById('type').value,
+        category: document.getElementById('category').value,
+        amount: parseFloat(document.getElementById('amount').value || '0'),
+        note: document.getElementById('note').value.trim()
+      };
+      records.push(record);
+      localStorage.setItem('records', JSON.stringify(records));
+      form.reset();
+      document.getElementById('date').valueAsDate = new Date(); // 重置日期為今天
+      renderTable();
+    });
+
+    filterButtons.forEach(btn => btn.addEventListener('click', () => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTypeFilter = btn.dataset.filter;
+      renderTable();
+    }));
+
+    filterCategory.addEventListener('change', () => {
+      currentCategoryFilter = filterCategory.value;
+      renderTable();
+    });
+
+    filterYear.addEventListener('change', () => {
+      currentYearFilter = filterYear.value;
+      renderTable();
+    });
+
+    filterMonth.addEventListener('change', () => {
+      currentMonthFilter = filterMonth.value;
+      renderTable();
+    });
+
+    function renderTable() {
+      const sorted = [...records].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      const filtered = sorted.filter(r => {
+        const typeOK = currentTypeFilter === 'all' ? true : r.type === currentTypeFilter;
+        const catOK = currentCategoryFilter === 'all' ? true : r.category === currentCategoryFilter;
+        const yearOK = currentYearFilter === '' ? true : (r.date && r.date.slice(0, 4) === currentYearFilter);
+        const monthOK = currentMonthFilter === '' ? true : (r.date && r.date.slice(5, 7) === currentMonthFilter);
+        return typeOK && catOK && yearOK && monthOK;
+      });
+
+      // 渲染表格
+      recordsBody.innerHTML = filtered.map(r => `
+        <tr>
+          <td><i class="bi bi-calendar-check text-info me-1"></i>${r.date || ''}</td>
+          <td><span class="badge ${r.type === 'income' ? 'badge-income' : 'badge-expense'}">${r.type === 'income' ? '收入' : '支出'}</span></td>
+          <td><i class="bi bi-tag-fill text-warning me-1"></i>${r.category || ''}</td>
+          <td class="text-end"><i class="bi bi-currency-dollar text-success me-1"></i>$${r.amount.toFixed(2)}</td>
+          <td><i class="bi bi-chat-bubble text-muted me-1"></i>${r.note || ''}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${r.id}')">
+              <i class="bi bi-trash"></i>刪除
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      // 計算摘要（基於篩選後資料）
+      const income = filtered.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
+      const expense = filtered.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
+      const balance = income - expense;
+
+      totalIncomeEl.textContent = `$${income.toFixed(2)}`;
+      totalExpenseEl.textContent = `$${expense.toFixed(2)}`;
+      netBalanceEl.textContent = `$${balance.toFixed(2)}`;
+      netBalanceEl.parentElement.className = balance >= 0 ? 'card-body text-center text-primary' : 'card-body text-center text-danger'; // 結餘顏色變化
+    }
+
+    // 刪除記錄
+    function deleteRecord(id) {
+      if (confirm('確定刪除此記錄？')) {
+        records = records.filter(r => r.id !== id);
+        localStorage.setItem('records', JSON.stringify(records));
+        renderTable();
+      }
+    }
+
+    // 匯出 PDF
+    function exportPDF() {
+      if (records.length === 0) {
+        alert('沒有記錄可匯出！');
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // 新增標題
+      doc.setFontSize(16);
+      doc.text('日常支出收入記事簿', 14, 20);
+
+      // 準備表格資料
+      const headers = [['日期', '類型', '類別', '金額', '備註']];
+      const rows = records.map(r => [
+        r.date || '',
+        r.type === 'income' ? '收入' : '支出',
+        r.category || '',
+        `$${r.amount.toFixed(2)}`,
+        r.note || ''
+      ]);
+
+      // 使用 autotable 新增表格
+      doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 30,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [52, 73, 94] },
+        columnStyles: { 3: { halign: 'right' } }, // 金額右對齊
+        margin: { top: 30 }
+      });
+
+      // 儲存檔案
+      const filename = `記事簿_${new Date().toISOString().slice(0, 10)}.pdf`;
+      doc.save(filename);
+    }
+
+    // 初始渲染
+    renderTable();
+  </script>
+</body>
+</html>
